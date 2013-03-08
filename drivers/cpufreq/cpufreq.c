@@ -611,13 +611,13 @@ static ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf)
 	i = cpu_clk_g->dvfs->num_freqs-5;
 	
 	if (i == 0) {
-		pr_info("[franciscofranco] %s - error fetching the number of entries so we break earlier.", __func__);
+		pr_info("[cpufreq] %s - error fetching the number of entries so we break earlier.", __func__);
 		return 0;
 	}
 	
 	for (i--; i >= 0; i--) {
 		if (i == 0 || i == 3 || i == 6 || i == 9 || i == 12) 
-			c += sprintf(c, "%u %d\n", freq_table[i], cpu_clk_g->dvfs->millivolts[i]);
+			c += sprintf(c, "%umhz: %d mV\n", freq_table[i], cpu_clk_g->dvfs->millivolts[i]);
 	}
 	
 	return c - buf;
@@ -637,7 +637,7 @@ static ssize_t store_UV_mV_table(struct cpufreq_policy *policy, const char *buf,
 	rcu_read_lock();
 	
 	if (i == 0) {
-		pr_info("[franciscofranco] %s - error fetching the number of entries, so we break earlier.", __func__);
+		pr_info("[cpufreq] %s - error fetching the number of entries, so we break earlier.", __func__);
 		return 0;
 	}
 	
@@ -649,7 +649,7 @@ static ssize_t store_UV_mV_table(struct cpufreq_policy *policy, const char *buf,
 		if (freq_table[i] != 0) {
 			if (i == 0 || i == 3 || i == 6 || i == 9 || i == 12) {
 				user_mv_table[i] = cur_volt[j];
-				pr_info("[franciscofranco] %s - table[%d]: %lu\n", __func__, i, cur_volt[j]);
+				pr_info("[cpufreq] %s - table[%d]: %lu\n", __func__, i, cur_volt[j]);
 				j++;
 			}
 		}
