@@ -52,61 +52,6 @@ static DEFINE_SPINLOCK(cpufreq_driver_lock);
 static unsigned int user_mv_table[MAX_DVFS_FREQS] = { 800, 825, 850, 875, 900, 925, 975, 1000, 1025, 1050, 1075, 1100, 1125, 1150, 1175, 1200, 1225, 1250 };
 static unsigned int freq_table[13] = { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300 };
 
-/*
- * cpu_policy_rwsem is a per CPU reader-writer semaphore designed to cure
- * all cpufreq/hotplug/workqueue/etc related lock issues.
- *
- * The rules for this semaphore:
- * - Any routine that wants to read from the policy structure will
- *   do a down_read on this semaphore.
- * - Any routine that will write to the policy structure and/or may take away
- *   the policy altogether (eg. CPU hotplug), will hold this lock in write
- *   mode before doing so.
- *
- * Additional rules:
- * - All holders of the lock should check to make sure that the CPU they
- *   are concerned with are online after they get the lock.
- * - Governor routines that can be called in cpufreq hotplug path should not
- *   take this sem as top level hotplug notifier handler takes this.
- * - Lock should not be held across
- *     __cpufreq_governor(data, CPUFREQ_GOV_STOP);
- */
-static DEFINE_PER_CPU(int, cpufreq_policy_cpu);
-static DEFINE_PER_CPU(struct rw_semaphore, cpu_policy_rwsem);
-
-#define lock_policy_rwsem(mode, cpu)					\
-static int lock_policy_rwsem_##mode					\
-(int cpu)								\
-{									\
-	int policy_cpu = per_cpu(cpufreq_policy_cpu, cpu);		\
-	BUG_ON(policy_cpu == -1);					\
-	down_##mode(&per_cpu(cpu_policy_rwsem, policy_cpu));		\
-	if (unlikely(!cpu_online(cpu))) {				\
-		up_##mode(&per_cpu(cpu_policy_rwsem, policy_cpu));	\
-		return -1;						\
-	}								\
-									\
-	return 0;							\
-}
-
-lock_policy_rwsem(read, cpu);
-
-lock_policy_rwsem(write, cpu);
-
-static void unlock_policy_rwsem_read(int cpu)
-{
-	int policy_cpu = per_cpu(cpufreq_policy_cpu, cpu);
-	BUG_ON(policy_cpu == -1);
-	up_read(&per_cpu(cpu_policy_rwsem, policy_cpu));
-}
-
-static void unlock_policy_rwsem_write(int cpu)
-{
-	int policy_cpu = per_cpu(cpufreq_policy_cpu, cpu);
-	BUG_ON(policy_cpu == -1);
-	up_write(&per_cpu(cpu_policy_rwsem, policy_cpu));
-}
-
 
 /* internal prototypes */
 static int __cpufreq_governor(struct cpufreq_policy *policy,
