@@ -51,6 +51,9 @@ static DEFINE_SPINLOCK(cpufreq_driver_lock);
 
 static unsigned int freq_table[13] = { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300 };
 
+#define MIN_MV 600
+#define MAX_MV 1550
+
 /*
  * cpu_policy_rwsem is a per CPU reader-writer semaphore designed to cure
  * all cpufreq/hotplug/workqueue/etc related lock issues.
@@ -614,9 +617,11 @@ static ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf)
 		return 0;
 	}
 	
+	c += sprintf(c, "min:%i max:%i\n", MIN_MV, MAX_MV);
+
 	for (i--; i >= 0; i--) {
 		if (i == 0 || i == 3 || i == 6 || i == 9 || i == 12) 
-			c += sprintf(c, "%umhz: %d mV\n", freq_table[i], cpu_clk_g->dvfs->millivolts[i]);
+			c += sprintf(c, "%u %d\n", freq_table[i], cpu_clk_g->dvfs->millivolts[i]);
 	}
 	
 	return c - buf;
@@ -645,8 +650,10 @@ static ssize_t store_UV_mV_table(struct cpufreq_policy *policy, const char *buf,
 	for (i--; i >= 0; i--) {
 		if (freq_table[i] != 0) {
 			if (i == 0 || i == 3 || i == 6 || i == 9 || i == 12) {
-				if (cur_volt[j] <= 600)
-					cur_volt[j] = 600;
+				if (cur_volt[j] < MIN_MV)
+					cur_volt[j] = MIN_MV;
+				if (cur_volt[j] > MAX_MV)
+					cur_volt[j] = MAX_MV;
 				cpu_clk_g->dvfs->millivolts[i] = cur_volt[j];
 				pr_info("[cpufreq] %s - table[%d]: %d\n", __func__, i, cpu_clk_g->dvfs->millivolts[i]);
 				j++;
