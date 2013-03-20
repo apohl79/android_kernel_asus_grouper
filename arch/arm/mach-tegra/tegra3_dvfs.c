@@ -46,7 +46,7 @@ static const int core_millivolts[MAX_DVFS_FREQS] = {
 
 /* VDD_CPU >= (VDD_CORE - cpu_below_core) */
 /* VDD_CORE >= min_level(VDD_CPU), see tegra3_get_core_floor_mv() below */
-#define VDD_CPU_BELOW_VDD_CORE		300
+#define VDD_CPU_BELOW_VDD_CORE		400
 static int cpu_below_core = VDD_CPU_BELOW_VDD_CORE;
 
 #define VDD_SAFE_STEP			100
